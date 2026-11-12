@@ -222,6 +222,8 @@
     "ls_fault_trials_correct": 310,
     "all_fault_trials": 400,
     "all_fault_trials_correct": 400,
+    "ls_loops_in_final_states": 0,
+    "ls_blackholes_in_final_states": 0,
     "loops_in_final_states": 0,
     "blackholes_in_final_states": 0,
     "fib_entries_checked_per_trial": 1560,

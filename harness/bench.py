@@ -266,6 +266,8 @@ def add_summary(res):
         "ls_fault_trials_correct": sum(res[k]["converged_correct"] for k in ls_keys),
         "all_fault_trials": sum(res[k]["trials"] for k in all_keys),
         "all_fault_trials_correct": sum(res[k]["converged_correct"] for k in all_keys),
+        "ls_loops_in_final_states": sum(res[k]["final_state_errors_summed"]["loops"] for k in ls_keys),
+        "ls_blackholes_in_final_states": sum(res[k]["final_state_errors_summed"]["blackholes"] for k in ls_keys),
         "loops_in_final_states": sum(res[k]["final_state_errors_summed"]["loops"] for k in all_keys),
         "blackholes_in_final_states": sum(res[k]["final_state_errors_summed"]["blackholes"] for k in all_keys),
         "fib_entries_checked_per_trial": res["security"]["auth_on"]["fib_errors_after_attacks"]["pairs"],
