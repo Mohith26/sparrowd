@@ -1,0 +1,83 @@
+#!/bin/sh
+# BusyBox-style init script for sparrowd (install as /etc/init.d/S50sparrowd).
+# POSIX sh only, so it runs under BusyBox ash; CI runs it with `busybox sh`.
+# Settings are read from $SPARROWD_CONF (default /etc/default/sparrowd), e.g.
+#   TOPO=/etc/sparrowd/topo  ID=1  KEYFILE=/etc/sparrowd/key
+#   BIN=/usr/sbin/sparrowd   PIDFILE=/var/run/sparrowd.pid  LOG=/var/log/sparrowd.log
+# The HMAC key is passed as a file (-K), never on the command line, so it does not
+# show up in ps or /proc/<pid>/cmdline.
+
+CONF=${SPARROWD_CONF:-/etc/default/sparrowd}
+BIN=/usr/sbin/sparrowd
+TOPO=/etc/sparrowd/topo
+ID=1
+KEYFILE=/etc/sparrowd/key
+PIDFILE=/var/run/sparrowd.pid
+LOG=/var/log/sparrowd.log
+OPTS=
+
+# shellcheck disable=SC1090
+[ -r "$CONF" ] && . "$CONF"
+
+running() {
+    [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null
+}
+
+start() {
+    if running; then
+        echo "sparrowd already running (pid $(cat "$PIDFILE"))"
+        return 0
+    fi
+    set -- -t "$TOPO" -i "$ID"
+    if [ -n "$KEYFILE" ] && [ -r "$KEYFILE" ]; then
+        set -- "$@" -K "$KEYFILE"
+    fi
+    # shellcheck disable=SC2086
+    "$BIN" "$@" $OPTS >>"$LOG" 2>&1 &
+    echo $! >"$PIDFILE"
+    sleep 1
+    if running; then
+        echo "sparrowd $ID started (pid $(cat "$PIDFILE"))"
+    else
+        echo "sparrowd $ID failed to start, see $LOG"
+        rm -f "$PIDFILE"
+        return 1
+    fi
+}
+
+stop() {
+    if ! running; then
+        echo "sparrowd $ID not running"
+        rm -f "$PIDFILE"
+        return 0
+    fi
+    kill "$(cat "$PIDFILE")"
+    i=0
+    while running && [ "$i" -lt 5 ]; do
+        sleep 1
+        i=$((i + 1))
+    done
+    if running; then
+        kill -9 "$(cat "$PIDFILE")"
+    fi
+    rm -f "$PIDFILE"
+    echo "sparrowd $ID stopped"
+}
+
+case "$1" in
+    start) start ;;
+    stop) stop ;;
+    restart) stop; start ;;
+    status)
+        if running; then
+            echo "sparrowd $ID running (pid $(cat "$PIDFILE"))"
+        else
+            echo "sparrowd $ID stopped"
+            exit 3
+        fi
+        ;;
+    *)
+        echo "usage: $0 {start|stop|restart|status}"
+        exit 2
+        ;;
+esac
