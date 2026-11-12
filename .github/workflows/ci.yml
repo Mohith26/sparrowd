@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (-Wall -Wextra -Werror)
+        run: make all CC=${{ matrix.cc }}
+      - name: Unit tests under ASan + UBSan
+        run: make unit CC=${{ matrix.cc }}
+      - name: No heap allocation in daemon code
+        run: make check-noheap CC=${{ matrix.cc }}
+      - name: Mutation fuzz smoke (ASan + UBSan)
+        run: make fuzz-smoke CC=${{ matrix.cc }}
+      - name: 40-router integration test (ASan daemons)
+        run: make build/sparrowd.asan CC=${{ matrix.cc }} && python3 tests/test_integration.py
+      - name: Footprint
+        run: make size CC=${{ matrix.cc }}
+
+  libfuzzer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build libFuzzer target
+        run: make build/fuzz_libfuzzer
+      - name: Fuzz receive path for 60 seconds
+        run: |
+          mkdir -p corpus
+          ./build/fuzz_libfuzzer -max_total_time=60 -max_len=4096 corpus
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: c-cpp
+          build-mode: manual
+      - run: make all CC=gcc
+      - uses: github/codeql-action/analyze@v3
