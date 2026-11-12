@@ -255,8 +255,46 @@ def fuzz():
     }
 
 
+def add_summary(res):
+    """Totals derived from the sections above, so every headline number lives in this file."""
+    ls_keys = ["link_failure_ls", "router_failure_ls", "link_failure_ls_5pct_loss"]
+    all_keys = ls_keys + ["link_failure_dv", "router_failure_dv"]
+    sec = res["security"]["auth_on"]
+    sent = sec["attack_packets_sent"]
+    res["summary"] = {
+        "ls_fault_trials": sum(res[k]["trials"] for k in ls_keys),
+        "ls_fault_trials_correct": sum(res[k]["converged_correct"] for k in ls_keys),
+        "all_fault_trials": sum(res[k]["trials"] for k in all_keys),
+        "all_fault_trials_correct": sum(res[k]["converged_correct"] for k in all_keys),
+        "loops_in_final_states": sum(res[k]["final_state_errors_summed"]["loops"] for k in all_keys),
+        "blackholes_in_final_states": sum(res[k]["final_state_errors_summed"]["blackholes"] for k in all_keys),
+        "fib_entries_checked_per_trial": res["security"]["auth_on"]["fib_errors_after_attacks"]["pairs"],
+        "link_failure_p99_ms_ls_vs_dv_same_faults": [res["link_failure_ls_same_faults_as_dv"]["p99_ms"],
+                                                     res["link_failure_dv"]["p99_ms"]],
+        "link_failure_p50_ms_ls_vs_dv_same_faults": [res["link_failure_ls_same_faults_as_dv"]["p50_ms"],
+                                                     res["link_failure_dv"]["p50_ms"]],
+        "attack_packets_sent": sum(sent.values()),
+        "attack_packets_blocked": sec["auth_failures_counted"] + sec["replays_counted"] + sec["stale_lsas_refused"],
+        "forged_lsas_poisoning_routing_without_auth": [res["security"]["auth_off_baseline"]["attacks_that_poisoned_routing"],
+                                                       res["security"]["auth_off_baseline"]["attacks"]],
+    }
+    return res
+
+
 def main():
+    out = "results/results_quick.json" if QUICK else "results/results.json"
+    if "--summarize" in sys.argv:  # recompute the summary block of an existing run
+        with open(out) as f:
+            res = add_summary(json.load(f))
+        with open(out, "w") as f:
+            json.dump(res, f, indent=2)
+        print(json.dumps(res["summary"], indent=2))
+        return
     os.makedirs("results", exist_ok=True)
+    prior = {}
+    if os.path.exists(out):
+        with open(out) as f:
+            prior = {k: v for k, v in json.load(f).items() if k.startswith("ci_")}
     nodes, links = load_topo(TOPO)
     rnd = random.Random(SEED)
     cand = affecting_links(nodes, links)
@@ -290,7 +328,8 @@ def main():
     print("fuzzing ...", flush=True)
     res["fuzz"] = fuzz()
     res["wall_seconds"] = round(time.time() - t_start, 1)
-    out = "results/results_quick.json" if QUICK else "results/results.json"
+    res.update(prior)  # keep numbers copied from CI runs (see README)
+    add_summary(res)
     with open(out, "w") as f:
         json.dump(res, f, indent=2)
     print(json.dumps(res, indent=2))

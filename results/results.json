@@ -1,0 +1,243 @@
+{
+  "topology": {
+    "name": "GEANT 2012 (Internet Topology Zoo)",
+    "routers": 40,
+    "links": 61,
+    "links_whose_failure_changes_routing": 59,
+    "cost_rule": "100 Gbps / link capacity (OSPF auto-cost style)"
+  },
+  "timers": {
+    "hello_ms": 50,
+    "dead_ms": 200,
+    "lsa_retransmit_ms": 100,
+    "dv_periodic_ms": 1000,
+    "dv_triggered_min_gap_ms": 20,
+    "dv_infinity": 2048,
+    "poll_granularity_ms": 5
+  },
+  "quick": false,
+  "link_failure_ls": {
+    "trials": 200,
+    "converged_correct": 200,
+    "timeouts_or_incorrect": 0,
+    "p50_ms": 3.05,
+    "p90_ms": 5.79,
+    "p99_ms": 9.22,
+    "max_ms": 9.7,
+    "mean_ms": 3.27,
+    "final_state_errors_summed": {
+      "wrong": 0,
+      "loops": 0,
+      "blackholes": 0
+    },
+    "retransmits_total": 43,
+    "dropped_tx_total": 0,
+    "sanitizer_errors": 0
+  },
+  "link_failure_dv": {
+    "trials": 60,
+    "converged_correct": 60,
+    "timeouts_or_incorrect": 0,
+    "p50_ms": 23.15,
+    "p90_ms": 2791.53,
+    "p99_ms": 4115.21,
+    "max_ms": 4144.76,
+    "mean_ms": 490.41,
+    "final_state_errors_summed": {
+      "wrong": 0,
+      "loops": 0,
+      "blackholes": 0
+    },
+    "retransmits_total": 0,
+    "dropped_tx_total": 0,
+    "sanitizer_errors": 0
+  },
+  "link_failure_ls_same_faults_as_dv": {
+    "trials": 60,
+    "converged_correct": 60,
+    "timeouts_or_incorrect": 0,
+    "p50_ms": 2.41,
+    "p90_ms": 5.44,
+    "p99_ms": 8.46,
+    "max_ms": 9.7,
+    "mean_ms": 2.74
+  },
+  "router_failure_ls": {
+    "trials": 60,
+    "converged_correct": 60,
+    "timeouts_or_incorrect": 0,
+    "p50_ms": 188.46,
+    "p90_ms": 206.78,
+    "p99_ms": 299.34,
+    "max_ms": 306.29,
+    "mean_ms": 191.45,
+    "final_state_errors_summed": {
+      "wrong": 0,
+      "loops": 0,
+      "blackholes": 0
+    }
+  },
+  "router_failure_dv": {
+    "trials": 30,
+    "converged_correct": 30,
+    "timeouts_or_incorrect": 0,
+    "p50_ms": 533.05,
+    "p90_ms": 3540.26,
+    "p99_ms": 4283.97,
+    "max_ms": 4290.76,
+    "mean_ms": 1061.49,
+    "final_state_errors_summed": {
+      "wrong": 0,
+      "loops": 0,
+      "blackholes": 0
+    }
+  },
+  "link_failure_ls_5pct_loss": {
+    "trials": 50,
+    "converged_correct": 50,
+    "timeouts_or_incorrect": 0,
+    "p50_ms": 3.14,
+    "p90_ms": 337.82,
+    "p99_ms": 498.41,
+    "max_ms": 500.44,
+    "mean_ms": 68.25,
+    "final_state_errors_summed": {
+      "wrong": 0,
+      "loops": 0,
+      "blackholes": 0
+    },
+    "retransmits_total": 1274,
+    "dropped_tx_total": 7650,
+    "sanitizer_errors": 0
+  },
+  "security": {
+    "auth_on": {
+      "attack_packets_sent": {
+        "forged_wrong_key": 40,
+        "unsigned": 40,
+        "replayed": 120,
+        "stale_lsa_valid_key": 40
+      },
+      "auth_failures_counted": 80,
+      "replays_counted": 120,
+      "forged_or_unsigned_rejected": 80,
+      "forged_or_unsigned_sent": 80,
+      "replays_rejected": 120,
+      "stale_lsas_refused": 40,
+      "fib_errors_after_attacks": {
+        "pairs": 1560,
+        "wrong": 0,
+        "loops": 0,
+        "blackholes": 0
+      }
+    },
+    "auth_off_baseline": {
+      "victims": [
+        8,
+        21,
+        33,
+        38,
+        7,
+        15,
+        27,
+        32,
+        29,
+        40
+      ],
+      "attacks": 10,
+      "attacks_that_poisoned_routing": 10,
+      "mean_wrong_fib_entries_2s_after": 55.2,
+      "mean_blackholed_pairs_2s_after": 46.4,
+      "pairs_per_check": 1560
+    }
+  },
+  "footprint": {
+    "platform": "Darwin arm64",
+    "binary_bytes_stripped": 52576,
+    "binary_bytes_unstripped": 53288,
+    "size_output": "__TEXT\t__DATA\t__OBJC\tothers\tdec\thex\n16384\t49152\t0\t4295000064\t4295065600\t100018000",
+    "router_state_bytes_static": 25608,
+    "rss_kb_median": 1904.0,
+    "rss_kb_max": 1904,
+    "peak_rss_kb_max": 1904,
+    "rss_source": "task_info (macOS) or /proc/self/statm (Linux), read by each daemon itself",
+    "routers_measured": 40,
+    "heap_allocations_in_daemon_code": 0,
+    "heap_check": "make check-noheap: nm -u on daemon objects shows no malloc/calloc/realloc/free"
+  },
+  "fuzz": {
+    "harness": "deterministic mutation fuzzer (fuzz/fuzz_driver.c) over the full receive path, ASan+UBSan",
+    "inputs_executed": 20000000,
+    "packets_parsed": 69496799,
+    "cpu_seconds": 158.9,
+    "lsas_installed_from_fuzzed_input": 11304746,
+    "runs": 10,
+    "crashing_runs": 0,
+    "outcomes": {
+      "ok": 20358268,
+      "short": 21514703,
+      "bad_version": 3762037,
+      "bad_len": 1659036,
+      "unknown_src": 4811190,
+      "admin_down": 0,
+      "auth_fail": 11798064,
+      "replay": 317971,
+      "bad_type": 2676972,
+      "bad_payload": 2509110,
+      "not_adjacent": 89448
+    },
+    "crash_details": []
+  },
+  "wall_seconds": 617.4,
+  "ci_linux_footprint": {
+    "source": "https://github.com/Mohith26/sparrowd/actions/runs/43155135968 (ubuntu-latest, `make size` step)",
+    "gcc": {
+      "binary_bytes_stripped": 22760,
+      "text": 18110,
+      "data": 948,
+      "bss": 37512
+    },
+    "clang": {
+      "binary_bytes_stripped": 22976,
+      "text": 18179,
+      "data": 864,
+      "bss": 37424
+    }
+  },
+  "ci_libfuzzer": {
+    "source": "https://github.com/Mohith26/sparrowd/actions/runs/43155135968 (libfuzzer job)",
+    "seconds": 61,
+    "execs": 353118,
+    "coverage_edges": 217,
+    "features": 834,
+    "corpus_inputs": 231,
+    "crashes": 0
+  },
+  "ci_codeql": {
+    "source": "https://github.com/Mohith26/sparrowd/actions/runs/43155135968 (codeql job, c-cpp)",
+    "open_alerts": 0
+  },
+  "summary": {
+    "ls_fault_trials": 310,
+    "ls_fault_trials_correct": 310,
+    "all_fault_trials": 400,
+    "all_fault_trials_correct": 400,
+    "loops_in_final_states": 0,
+    "blackholes_in_final_states": 0,
+    "fib_entries_checked_per_trial": 1560,
+    "link_failure_p99_ms_ls_vs_dv_same_faults": [
+      8.46,
+      4115.21
+    ],
+    "link_failure_p50_ms_ls_vs_dv_same_faults": [
+      2.41,
+      23.15
+    ],
+    "attack_packets_sent": 240,
+    "attack_packets_blocked": 240,
+    "forged_lsas_poisoning_routing_without_auth": [
+      10,
+      10
+    ]
+  }
+}
