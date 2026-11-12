@@ -1,6 +1,7 @@
 CC ?= cc
 CFLAGS_COMMON = -std=c11 -Wall -Wextra -Werror -Wshadow -Wconversion -Wno-sign-conversion -Isrc
 CFLAGS ?= -Os
+LDFLAGS ?=
 SAN = -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
 UNAME := $(shell uname)
 
@@ -10,10 +11,10 @@ DAEMON = $(CORE) src/topo.c src/main.c
 # Files written by the tool sandbox on macOS can be quarantined; harmless elsewhere.
 ifeq ($(UNAME),Darwin)
 FIX = xattr -c $@ 2>/dev/null || true
-STRIP = strip -x
+STRIP ?= strip -x
 else
 FIX = true
-STRIP = strip -s
+STRIP ?= strip -s
 endif
 
 .PHONY: all test unit fuzz-smoke check-noheap size clean
@@ -24,7 +25,7 @@ build:
 	mkdir -p build
 
 build/sparrowd: $(DAEMON) src/*.h | build
-	$(CC) $(CFLAGS_COMMON) $(CFLAGS) $(DAEMON) -o $@
+	$(CC) $(CFLAGS_COMMON) $(CFLAGS) $(DAEMON) $(LDFLAGS) -o $@
 	@$(FIX)
 
 build/sparrowd.stripped: build/sparrowd
@@ -41,6 +42,16 @@ build/test_unit: tests/test_unit.c $(CORE) src/*.h | build
 
 build/fuzz_driver: fuzz/fuzz_rx.c fuzz/fuzz_driver.c $(CORE) src/*.h | build
 	$(CC) $(CFLAGS_COMMON) $(SAN) fuzz/fuzz_rx.c fuzz/fuzz_driver.c $(CORE) -o $@
+	@$(FIX)
+
+# Sanitizer-free builds of the tests, for cross-compiled targets run under qemu-user
+# (ASan does not work under qemu-user emulation).
+build/test_unit_plain: tests/test_unit.c $(CORE) src/*.h | build
+	$(CC) $(CFLAGS_COMMON) -O2 tests/test_unit.c $(CORE) $(LDFLAGS) -o $@
+	@$(FIX)
+
+build/fuzz_driver_plain: fuzz/fuzz_rx.c fuzz/fuzz_driver.c $(CORE) src/*.h | build
+	$(CC) $(CFLAGS_COMMON) -O2 fuzz/fuzz_rx.c fuzz/fuzz_driver.c $(CORE) $(LDFLAGS) -o $@
 	@$(FIX)
 
 # libFuzzer build (needs a clang with the fuzzer runtime, e.g. on Linux CI).

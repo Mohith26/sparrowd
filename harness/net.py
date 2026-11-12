@@ -6,6 +6,7 @@ import heapq
 import hmac
 import hashlib
 import os
+import shlex
 import signal
 import socket
 import struct
@@ -139,7 +140,9 @@ class Net:
 
     # ----- process control -----
     def start_router(self, r):
-        args = [self.binary, "-t", self.topo, "-i", str(r), "-m", self.mode, "-p", str(self.base),
+        # SPARROWD_EXEC lets CI run a cross-compiled binary under an emulator,
+        # e.g. SPARROWD_EXEC=qemu-aarch64-static
+        args = shlex.split(os.environ.get("SPARROWD_EXEC", "")) + [self.binary, "-t", self.topo, "-i", str(r), "-m", self.mode, "-p", str(self.base),
                 "-H", str(self.hello_ms), "-D", str(self.dead_ms)]
         if self.key:
             args += ["-k", self.key]
