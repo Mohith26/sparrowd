@@ -137,23 +137,25 @@ static void control(const char *cmd, size_t n, struct sockaddr_in *from, socklen
 static void on_sig(int s) { (void)s; stop = 1; }
 
 static void usage(void) {
-    fprintf(stderr, "usage: sparrowd -t topo -i id [-m ls|dv] [-k hexkey] [-p baseport]\n"
+    fprintf(stderr, "usage: sparrowd -t topo -i id [-m ls|dv] [-k hexkey | -K keyfile] [-p baseport]\n"
                     "                [-H hello_ms] [-D dead_ms]\n");
     exit(2);
 }
 
 int main(int argc, char **argv) {
-    const char *topo = NULL, *keyhex = NULL;
+    const char *topo = NULL, *keyhex = NULL, *keyfile = NULL;
+    static char keybuf[160];
     int id = -1, mode = MODE_LS;
     timers_t t = {.hello_ms = 50, .dead_ms = 200, .rxmt_ms = 100, .refresh_ms = 10000,
                   .maxage_s = 30, .dv_period_ms = 1000, .dv_trigger_ms = 20};
     int opt;
-    while ((opt = getopt(argc, argv, "t:i:m:k:p:H:D:")) != -1) {
+    while ((opt = getopt(argc, argv, "t:i:m:k:K:p:H:D:")) != -1) {
         switch (opt) {
         case 't': topo = optarg; break;
         case 'i': id = atoi(optarg); break;
         case 'm': mode = !strcmp(optarg, "dv") ? MODE_DV : MODE_LS; break;
         case 'k': keyhex = optarg; break;
+        case 'K': keyfile = optarg; break; /* keeps the key out of ps / /proc/<pid>/cmdline */
         case 'p': base_port = (uint16_t)atoi(optarg); break;
         case 'H': t.hello_ms = (uint32_t)atoi(optarg); break;
         case 'D': t.dead_ms = (uint32_t)atoi(optarg); break;
@@ -165,6 +167,18 @@ int main(int argc, char **argv) {
 
     router_init(&R, (uint16_t)id, mode, &t, tx, NULL, wall_us, NULL);
     rng_state ^= (uint64_t)id * 0x2545F4914F6CDD1Dull ^ wall_us(NULL);
+    if (keyfile) {
+        FILE *kf = fopen(keyfile, "r");
+        size_t n = 0;
+        int ch;
+        if (!kf) { perror(keyfile); return 1; }
+        while ((ch = fgetc(kf)) != EOF && n + 1 < sizeof keybuf)
+            if (hexval((char)ch) >= 0) keybuf[n++] = (char)ch; /* skip whitespace/newlines */
+        fclose(kf);
+        keybuf[n] = 0;
+        if (n < 2) { fprintf(stderr, "empty key file %s\n", keyfile); return 1; }
+        keyhex = keybuf;
+    }
     if (keyhex) {
         uint8_t key[64];
         size_t kl = 0, hl = strlen(keyhex);
