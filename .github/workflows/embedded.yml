@@ -1,0 +1,31 @@
+name: embedded
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  arm-qemu:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64, armv7]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cross-compile with Ubuntu cross gcc, run unit, fuzz smoke and 40-router integration under qemu-user
+        run: bash ci/arm.sh ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sparrowd-${{ matrix.target }}
+          path: dist/${{ matrix.target }}
+
+  deploy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: BusyBox init script + hardened systemd unit on a real systemd host
+        run: bash ci/deploy-check.sh
