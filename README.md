@@ -70,6 +70,42 @@ source/destination pairs 2 s later, because the victim cannot out-sequence the f
 | CodeQL (c-cpp) | 0 open alerts |
 | Unit checks (ASan + UBSan) | 56 of 56 |
 
+**Embedded Linux: ARM cross-builds and deployment** (CI only, GitHub Actions run
+[43157993876](https://github.com/Mohith26/sparrowd/actions/runs/43157993876), workflow
+`embedded.yml`; numbers are under the `ci_arm_*` keys in `results/results.json`)
+
+I cross-compile with Ubuntu's cross gcc 13.3 and run the binaries under qemu-user
+(process-level ARM emulation on an x86-64 runner, so this is not real ARM hardware and the
+timings are emulated):
+
+| Target | Stripped, dynamic | Stripped, static | text | Unit checks | Fuzz smoke | 40-router integration |
+|---|---|---|---|---|---|---|
+| aarch64 (`aarch64-linux-gnu`) | 67,592 B | 663,512 B | 19,134 B | 56/56 | 200,000 inputs, 0 crashes | 20/20 checks |
+| armv7 hard-float (`arm-linux-gnueabihf`) | 17,888 B | 414,956 B | 14,530 B | 56/56 | 200,000 inputs, 0 crashes | 20/20 checks |
+
+The aarch64 dynamic binary is mostly padding from the linker's 64 KB page alignment; the
+code itself is 19 KB. The static builds carry glibc, which is what lets them run under
+qemu-user without a target sysroot. The integration test is the same one CI runs natively:
+40 ARM daemons on GEANT, link cuts, a `kill -9` and restart, forged, unsigned and replayed
+packets, and both baselines. Sanitizers do not run under qemu-user, so the ASan/UBSan
+coverage comes from the x86-64 jobs.
+
+`deploy/` holds the target-side pieces, and `ci/deploy-check.sh` exercises them on a real
+systemd host in the same run:
+
+* `S50sparrowd`, a BusyBox-style init script (POSIX sh). shellcheck is clean, and CI runs it
+  with `busybox sh` to start, query and stop routers.
+* `sparrowd.service`, a hardened systemd unit: DynamicUser, an empty capability set, a
+  syscall filter, loopback-only IP policy, `MemoryMax=16M`, and the HMAC key delivered as
+  a systemd credential and read with `-K` so it never appears in `/proc/<pid>/cmdline`.
+  `systemd-analyze verify` is clean, and `systemd-analyze security` scores it **1.1 OK**.
+* The check starts router 1 under that unit and routers 2 and 3 through the init script,
+  then confirms all three forwarding tables are correct and that the key is not on the
+  command line.
+
+I have not built a Buildroot or Yocto image, and nothing here has run on a physical ARM
+board or a full-system QEMU VM.
+
 ## How it works
 
 * `src/proto.c` is the protocol core and contains no sockets: it takes a clock and a send
@@ -99,16 +135,23 @@ python3 harness/bench.py --quick
 Run one router by hand:
 
 ```sh
-./build/sparrowd -t data/geant2012.topo -i 3 -k 73706172726f772d6c61622d6b65792d31
+echo 73706172726f772d6c61622d6b65792d31 > key && chmod 600 key
+./build/sparrowd -t data/geant2012.topo -i 3 -K key   # -k <hex> also works, but shows up in ps
 echo fib | nc -u -w1 127.0.0.1 21003
 ```
 
 The topology comes from `tools/zoo2topo.py data/Geant2012.graphml data/geant2012.topo`
 (cost = 100 Gbps / link capacity; 22 unlabeled edges assumed 10 Gbps).
 
+Cross-build and emulate locally on Linux with `bash ci/arm.sh aarch64` (or `armv7`); it
+needs the Ubuntu cross gcc and qemu-user-static packages.
+
 CI (`.github/workflows/ci.yml`) builds with `-Wall -Wextra -Werror -Wconversion` on gcc and
 clang, runs the unit, fuzz-smoke, no-heap and integration tests under sanitizers, runs
-libFuzzer for 60 s, and runs CodeQL.
+libFuzzer for 60 s, and runs CodeQL. `.github/workflows/embedded.yml` runs the ARM
+cross-builds under qemu-user and the deployment check. The automation is Python (the
+network harness and benchmark) and Bash (`ci/arm.sh`, `ci/deploy-check.sh`); the init
+script is POSIX sh.
 
 ## Limits
 

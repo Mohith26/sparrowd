@@ -241,5 +241,78 @@
       10,
       10
     ]
+  },
+  "ci_arm_aarch64": {
+    "source": "https://github.com/Mohith26/sparrowd/actions/runs/43157993876 job 130982299573",
+    "toolchain": "aarch64-linux-gnu-gcc 13.3.0 (Ubuntu 24.04 cross)",
+    "emulator": "qemu-aarch64-static 8.2.2",
+    "dynamic_stripped_bytes": 67592,
+    "static_stripped_bytes": 663512,
+    "text": 19134,
+    "data": 1052,
+    "bss": 37576,
+    "size_note": "dynamic binary is mostly padding from the aarch64 linker's 64 KB max-page-size alignment; code (text) is 19,134 B. Static size includes glibc.",
+    "integration_link_cut_ms_emulated": [
+      1.2,
+      0.8,
+      2.5,
+      3.9
+    ],
+    "integration_router_kill_ms_emulated": 306.4,
+    "workflow": ".github/workflows/embedded.yml (job arm-qemu, script ci/arm.sh)",
+    "commit": "17f7b53",
+    "host": "ubuntu-latest x86-64 runner; ARM code runs under qemu-user process emulation, not on ARM hardware",
+    "sanitizers": "none (ASan/UBSan do not run under qemu-user); sanitizer runs are the x86-64 jobs in ci.yml",
+    "unit_checks": "56/56",
+    "fuzz_smoke_inputs": 200000,
+    "fuzz_smoke_packets": 693901,
+    "fuzz_smoke_crashes": 0,
+    "integration_checks_ok": 20,
+    "integration_checks_failed": 0,
+    "integration_scope": "40 emulated ARM sparrowd processes on GEANT: initial convergence (1560 FIB entries vs oracle), 4 link cuts, 1 SIGKILL + restart, forged/unsigned/replayed packet rejection, DV baseline, unauthenticated-forgery baseline"
+  },
+  "ci_arm_armv7": {
+    "source": "https://github.com/Mohith26/sparrowd/actions/runs/43157993876 job 130982299910",
+    "toolchain": "arm-linux-gnueabihf-gcc 13.3.0 (Ubuntu 24.04 cross)",
+    "emulator": "qemu-arm-static 8.2.2",
+    "dynamic_stripped_bytes": 17888,
+    "static_stripped_bytes": 414956,
+    "text": 14530,
+    "data": 536,
+    "bss": 37552,
+    "size_note": "static size includes glibc",
+    "integration_link_cut_ms_emulated": [
+      2.3,
+      3.4,
+      7.2,
+      2.9
+    ],
+    "integration_router_kill_ms_emulated": 201.2,
+    "workflow": ".github/workflows/embedded.yml (job arm-qemu, script ci/arm.sh)",
+    "commit": "17f7b53",
+    "host": "ubuntu-latest x86-64 runner; ARM code runs under qemu-user process emulation, not on ARM hardware",
+    "sanitizers": "none (ASan/UBSan do not run under qemu-user); sanitizer runs are the x86-64 jobs in ci.yml",
+    "unit_checks": "56/56",
+    "fuzz_smoke_inputs": 200000,
+    "fuzz_smoke_packets": 693901,
+    "fuzz_smoke_crashes": 0,
+    "integration_checks_ok": 20,
+    "integration_checks_failed": 0,
+    "integration_scope": "40 emulated ARM sparrowd processes on GEANT: initial convergence (1560 FIB entries vs oracle), 4 link cuts, 1 SIGKILL + restart, forged/unsigned/replayed packet rejection, DV baseline, unauthenticated-forgery baseline"
+  },
+  "ci_arm_deploy": {
+    "source": "https://github.com/Mohith26/sparrowd/actions/runs/43157993876 job 130982299799 (job deploy-check, script ci/deploy-check.sh)",
+    "commit": "17f7b53",
+    "host": "ubuntu-latest x86-64 runner with systemd as PID 1 (native build, not ARM)",
+    "shellcheck_init_script": "clean (deploy/S50sparrowd, -s sh)",
+    "init_script_shell": "busybox sh (busybox-static)",
+    "systemd_analyze_verify": "clean",
+    "systemd_security_exposure": 1.1,
+    "systemd_security_rating": "OK",
+    "service_user": "sparrowd (DynamicUser)",
+    "service_rss_kb": 1844,
+    "three_router_check": "router 1 under the hardened systemd unit plus routers 2 and 3 started by the BusyBox init script: all three FIBs matched expected routes",
+    "key_in_cmdline": false,
+    "not_tested": "no Buildroot/Yocto image was built; nothing ran on real ARM hardware or a full-system QEMU VM"
   }
 }
